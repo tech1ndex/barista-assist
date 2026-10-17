@@ -42,3 +42,4 @@ input:focus-visible,button:focus-visible,select:focus-visible{outline:2px solid 
 .sync{margin-top:10px;font-size:.85rem;color:var(--mute);min-height:1.2em}
 .auth{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .ghost{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+[hidden]{display:none !important}

@@ -1,16 +1,21 @@
 import { analyse, nextGrindSetting } from './advice.js';
-import { createStore } from './store.js';
+import { createStore, browserStorage, adoptAnonymousShots, ANONYMOUS_SCOPE } from './store.js';
 import { createClient, signIn, signOut, currentUser, onAuthChange } from './auth.js';
 import { syncNow } from './sync.js';
 
-const store = createStore(window.localStorage);
+const storage = browserStorage();
 const element = (id) => document.getElementById(id);
+
+// Rebound on sign-in and sign-out: each account gets its own scope, so two
+// people sharing a browser cannot read or upload each other's shots.
+let store = createStore(storage, ANONYMOUS_SCOPE);
+let client = null;
+let signedInUser = null;
+let syncInFlight = false;
 
 let selectedTaste = 'balanced';
 let beanFilter = '';
-
-const client = createClient();
-let signedInUser = null;
+let lastProblem = '';
 
 function readForm() {
   const grindValue = element('grind').value.trim();
@@ -32,7 +37,7 @@ function showFormError(message) {
 
 function renderAdvice(result, grind) {
   element('mR').textContent = `1:${result.ratio.toFixed(1)}`;
-  element('mT').textContent = `${element('time').value}s`;
+  element('mT').textContent = `${result.timeSeconds}s`;
   element('mF').textContent = `${result.flow.toFixed(1)} g/s`;
   element('pin').style.left = `${((result.position + 1) / 2) * 100}%`;
   element('vd').textContent = result.verdict;
@@ -61,9 +66,16 @@ function describeShot(shot) {
   return `${when}: ${shot.dose_g}g in, ${shot.yield_g}g out, ${shot.time_s}s${grind}${bean}`;
 }
 
+function matchesFilter(shot) {
+  // Case-folded, because distinctBeans folds too: an exact comparison would
+  // hide "red brick" from the "Red Brick" filter, losing it from its own
+  // coffee's history with no sign it exists.
+  if (beanFilter === '') return true;
+  return (shot.bean ?? '').toLowerCase() === beanFilter.toLowerCase();
+}
+
 function renderHistory() {
-  const shots = store.activeShots()
-    .filter((shot) => beanFilter === '' || shot.bean === beanFilter);
+  const shots = store.activeShots().filter(matchesFilter);
   const history = element('hist');
 
   if (shots.length === 0) {
@@ -92,6 +104,9 @@ function renderHistory() {
     remove.addEventListener('click', () => {
       store.deleteShot(shot.id);
       renderAll();
+      // A tombstone is a local change like any other and has to reach the
+      // other devices, or the shot stays visible on them indefinitely.
+      runSync();
     });
 
     row.append(summary, remove);
@@ -122,6 +137,11 @@ function renderBeanControls() {
 function renderSyncState(result) {
   const pending = result ? result.pending : store.dirtyShots().length;
   const state = element('syncstate');
+
+  if (lastProblem !== '') {
+    state.textContent = pending === 0 ? lastProblem : `${lastProblem} — ${pending} not synced`;
+    return;
+  }
   if (!signedInUser || pending === 0) {
     state.textContent = '';
     return;
@@ -131,8 +151,8 @@ function renderSyncState(result) {
 
 function renderAuth() {
   const button = element('auth');
-  // With no Supabase project configured the app is local-only by design,
-  // so there is nothing to sign into and the control stays hidden.
+  // With no client the app is local-only by design, so there is nothing to
+  // sign into and the control stays hidden.
   button.hidden = client === null;
   if (client === null) return;
 
@@ -142,18 +162,43 @@ function renderAuth() {
     : 'Not signed in — shots are saved on this device only.';
 }
 
-async function runSync() {
-  if (!client || !signedInUser) return;
-  const result = await syncNow({ client, store, userId: signedInUser.id });
-  renderSyncState(result);
-  renderAll();
-}
-
 function renderAll() {
   renderBeanControls();
   renderHistory();
   renderAuth();
   renderSyncState();
+}
+
+async function runSync() {
+  // Without this, a save and the online handler can start overlapping syncs
+  // that push the same rows twice and race on the cursor.
+  if (!client || !signedInUser || syncInFlight) return;
+  syncInFlight = true;
+  try {
+    const result = await syncNow({
+      client,
+      store,
+      userId: signedInUser.id,
+      onProblem: (message) => { lastProblem = message; },
+    });
+    if (result.problems.length === 0) lastProblem = '';
+    renderSyncState(result);
+    renderAll();
+  } catch {
+    lastProblem = 'sync failed';
+    renderSyncState();
+  } finally {
+    syncInFlight = false;
+  }
+}
+
+function useScopeFor(user) {
+  signedInUser = user;
+  store = user
+    ? adoptAnonymousShots(storage, user.id)
+    : createStore(storage, ANONYMOUS_SCOPE);
+  lastProblem = '';
+  renderAll();
 }
 
 function saveShot() {
@@ -179,7 +224,7 @@ function saveShot() {
     taste: form.taste,
   });
 
-  renderAdvice(result, form.grind);
+  renderAdvice({ ...result, timeSeconds: form.timeSeconds }, form.grind);
   renderAll();
   element('advice').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
@@ -205,25 +250,39 @@ element('beanfilter').addEventListener('change', (event) => {
 element('go').addEventListener('click', saveShot);
 
 element('auth').addEventListener('click', async () => {
-  if (signedInUser) {
-    await signOut(client);
-  } else {
-    await signIn(client);
+  try {
+    if (signedInUser) {
+      await signOut(client);
+      useScopeFor(null);
+    } else {
+      await signIn(client);
+    }
+  } catch {
+    lastProblem = 'sign-in failed — check your connection';
+    renderSyncState();
   }
 });
 
-if (client) {
-  onAuthChange(client, (user) => {
-    signedInUser = user;
-    renderAll();
-    runSync();
-  });
-  currentUser(client).then((user) => {
-    signedInUser = user;
-    renderAll();
-    runSync();
-  });
-  window.addEventListener('online', runSync);
-}
-
+// Render immediately from local storage. Everything below is sync, which is
+// allowed to be slow, to fail, or never to happen at all.
 renderAll();
+
+(async function connect() {
+  client = await createClient();
+  renderAll();
+  if (!client) return;
+
+  onAuthChange(client, (user) => {
+    useScopeFor(user);
+    runSync();
+  });
+
+  try {
+    useScopeFor(await currentUser(client));
+    runSync();
+  } catch {
+    // No session to restore; stay local-only.
+  }
+
+  window.addEventListener('online', runSync);
+}());
