@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { computeMetrics } from '../web/advice.js';
+import { computeMetrics, extractionPosition } from '../web/advice.js';
 
 test('computeMetrics returns the brew ratio and flow rate', () => {
   const metrics = computeMetrics(18, 36, 28);
@@ -15,4 +15,27 @@ test('computeMetrics rejects a zero time rather than dividing by zero', () => {
 test('computeMetrics rejects non-numeric input', () => {
   assert.throws(() => computeMetrics(18, 36, Number.NaN), RangeError);
   assert.throws(() => computeMetrics('18', 36, 28), RangeError);
+});
+
+test('extractionPosition centres a balanced shot at the reference time', () => {
+  assert.equal(extractionPosition('balanced', 28), 0);
+});
+
+test('extractionPosition puts sour below zero and bitter above', () => {
+  assert.ok(extractionPosition('sour', 28) < 0);
+  assert.ok(extractionPosition('bitter', 28) > 0);
+});
+
+test('extractionPosition shifts with time away from the reference', () => {
+  assert.ok(extractionPosition('balanced', 40) > extractionPosition('balanced', 20));
+});
+
+test('extractionPosition clamps the time nudge at plus or minus 0.3', () => {
+  // 28 + 0.3 * 40 = 40s reaches the cap; beyond that nothing moves.
+  assert.equal(extractionPosition('balanced', 400), extractionPosition('balanced', 40));
+});
+
+test('extractionPosition never leaves the gauge', () => {
+  assert.ok(extractionPosition('bitter', 400) <= 0.95);
+  assert.ok(extractionPosition('sour', 1) >= -0.95);
 });
