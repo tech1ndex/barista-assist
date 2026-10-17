@@ -1,11 +1,16 @@
 import { analyse, nextGrindSetting } from './advice.js';
 import { createStore } from './store.js';
+import { createClient, signIn, signOut, currentUser, onAuthChange } from './auth.js';
+import { syncNow } from './sync.js';
 
 const store = createStore(window.localStorage);
 const element = (id) => document.getElementById(id);
 
 let selectedTaste = 'balanced';
 let beanFilter = '';
+
+const client = createClient();
+let signedInUser = null;
 
 function readForm() {
   const grindValue = element('grind').value.trim();
@@ -114,9 +119,41 @@ function renderBeanControls() {
   beanFilter = filter.value;
 }
 
+function renderSyncState(result) {
+  const pending = result ? result.pending : store.dirtyShots().length;
+  const state = element('syncstate');
+  if (!signedInUser || pending === 0) {
+    state.textContent = '';
+    return;
+  }
+  state.textContent = pending === 1 ? '1 shot not synced' : `${pending} shots not synced`;
+}
+
+function renderAuth() {
+  const button = element('auth');
+  // With no Supabase project configured the app is local-only by design,
+  // so there is nothing to sign into and the control stays hidden.
+  button.hidden = client === null;
+  if (client === null) return;
+
+  button.textContent = signedInUser ? 'Sign out' : 'Sign in with GitHub';
+  element('who').textContent = signedInUser
+    ? 'Signed in — shots sync across your devices.'
+    : 'Not signed in — shots are saved on this device only.';
+}
+
+async function runSync() {
+  if (!client || !signedInUser) return;
+  const result = await syncNow({ client, store, userId: signedInUser.id });
+  renderSyncState(result);
+  renderAll();
+}
+
 function renderAll() {
   renderBeanControls();
   renderHistory();
+  renderAuth();
+  renderSyncState();
 }
 
 function saveShot() {
@@ -145,6 +182,10 @@ function saveShot() {
   renderAdvice(result, form.grind);
   renderAll();
   element('advice').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  // Deliberately not awaited: the shot is already saved locally and the UI
+  // must never wait on the network to acknowledge it.
+  runSync();
 }
 
 for (const button of document.querySelectorAll('.taste button')) {
@@ -162,5 +203,27 @@ element('beanfilter').addEventListener('change', (event) => {
 });
 
 element('go').addEventListener('click', saveShot);
+
+element('auth').addEventListener('click', async () => {
+  if (signedInUser) {
+    await signOut(client);
+  } else {
+    await signIn(client);
+  }
+});
+
+if (client) {
+  onAuthChange(client, (user) => {
+    signedInUser = user;
+    renderAll();
+    runSync();
+  });
+  currentUser(client).then((user) => {
+    signedInUser = user;
+    renderAll();
+    runSync();
+  });
+  window.addEventListener('online', runSync);
+}
 
 renderAll();
