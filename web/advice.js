@@ -99,6 +99,47 @@ export function adviceForBitter({ yieldGrams, timeSeconds, ratio }) {
   return { verdict: 'Over-extracted', lead, tips, step };
 }
 
+const LONG_RATIO_FOR_WATERY = 2.4;
+
+export function adviceForWatery({ doseGrams, ratio }) {
+  let lead;
+  let step;
+  const tips = [];
+
+  if (ratio > LONG_RATIO_FOR_WATERY) {
+    lead = 'Your ratio is long. Cut the yield first.';
+    step = 0;
+    tips.push(`Try ${Math.round(doseGrams * 2)}g out for a 1:2 ratio.`);
+  } else {
+    lead = 'Go finer by 1 step, or add 0.5–1g of dose.';
+    step = -1;
+    tips.push('Check that the basket is full and tamped evenly.');
+  }
+
+  tips.push('Confirm the coffee is not stale (past its peak window).');
+
+  return { verdict: 'Weak or thin', lead, tips, step };
+}
+
+export function adviceForBalanced({ timeSeconds }) {
+  const tips = [];
+
+  if (isFast(timeSeconds) || isSlow(timeSeconds)) {
+    tips.push(
+      `It tastes good, but ${timeSeconds}s is outside the usual 25–32s window. `
+      + 'If the next shot drifts, adjust the grind by a small step.',
+    );
+  }
+  tips.push('Change nothing else until it is repeatable.');
+
+  return {
+    verdict: 'Balanced: keep this recipe',
+    lead: 'Repeat it once to confirm, then save it as your reference.',
+    tips,
+    step: 0,
+  };
+}
+
 function requirePositiveNumber(value, name) {
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
     throw new RangeError(`${name} must be a number greater than zero`);
