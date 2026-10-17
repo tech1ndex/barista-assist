@@ -7,7 +7,7 @@
 // This key is safe to commit. It ships to every browser that loads the app, so
 // it was never secret; row-level security is what protects the data. Only the
 // secret key (sb_secret_... / service_role) must stay out of this file.
-export const SUPABASE_URL = 'https://hoqmehmovfkxpwqeqahf.supabase.co';
+export const SUPABASE_URL = '';
 export const SUPABASE_ANON_KEY = '';
 
 // A value counts as supplied only if it is a non-blank string that is not the
