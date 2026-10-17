@@ -3,3 +3,9 @@ docs/superpowers
 .claude
 .superpowers
 node_modules
+.env
+.env.*
+*.pem
+*.key
+**/service-role*
+**/*secret*
