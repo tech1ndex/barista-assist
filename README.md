@@ -18,7 +18,7 @@ browser only, and no sign-in control appears.
 
     npm test
 
-No dependencies. Uses Node's built-in test runner. The dial-in rules in
+No dependencies. Uses Node's built-in test runner. The advice rules in
 `web/advice.js` are the thing worth protecting — their tests are the
 specification of the advice, so change them deliberately.
 
@@ -66,7 +66,7 @@ than the auth. Run these once after enabling sync.
 ## Layout
 
     web/        the app: static files, no build step
-      advice.js   pure dial-in rules, no DOM, no storage
+      advice.js   pure advice rules, no DOM, no storage
       store.js    local persistence, tombstones, outbox
       sync.js     push/pull against Supabase
       auth.js     GitHub sign-in
