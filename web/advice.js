@@ -29,6 +29,47 @@ export function nextGrindSetting(currentGrind, step, finerDirection) {
   return currentGrind - step * finerDirection;
 }
 
+const FAST_BELOW_SECONDS = 25;
+const SLOW_ABOVE_SECONDS = 32;
+
+function isFast(timeSeconds) {
+  return timeSeconds < FAST_BELOW_SECONDS;
+}
+
+function isSlow(timeSeconds) {
+  return timeSeconds > SLOW_ABOVE_SECONDS;
+}
+
+export function adviceForSour({ yieldGrams, timeSeconds, ratio }) {
+  let lead;
+  let step;
+  const tips = [];
+
+  if (isSlow(timeSeconds)) {
+    lead = 'Slow but sour usually means channeling or water that is too cool, '
+      + 'not a grind that is too coarse.';
+    step = 0;
+    tips.push('Do not go finer. Check puck prep: even distribution, level tamp, no clumps.');
+    tips.push('Try 1–2°C hotter, or add a short pre-infusion.');
+  } else if (isFast(timeSeconds)) {
+    lead = 'Go finer by 1–2 steps.';
+    step = -1;
+    tips.push('A fast shot gives the water too little contact time.');
+    tips.push('If it is still sour at 25–30s, raise the yield slightly.');
+  } else {
+    lead = 'Time is fine, so go finer by 1 step or let the shot run longer.';
+    step = -1;
+    tips.push(`Try a yield about 10–15% higher (e.g. ${Math.round(yieldGrams * 1.12)}g out).`);
+    tips.push('Or raise the temperature 1–2°C.');
+  }
+
+  if (ratio < 1.7) {
+    tips.push(`Your ratio of 1:${ratio.toFixed(1)} is short. A longer ratio extracts more.`);
+  }
+
+  return { verdict: 'Under-extracted', lead, tips, step };
+}
+
 function requirePositiveNumber(value, name) {
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
     throw new RangeError(`${name} must be a number greater than zero`);
