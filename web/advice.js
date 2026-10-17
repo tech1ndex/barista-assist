@@ -17,6 +17,18 @@ export function extractionPosition(taste, timeSeconds) {
   return clamp(base + timeNudge, -0.95, 0.95);
 }
 
+/**
+ * step: -1 finer, 1 coarser, 0 no change.
+ * finerDirection: the change in dial number that makes the grind finer.
+ * Going finer therefore adds finerDirection; going coarser subtracts it.
+ */
+export function nextGrindSetting(currentGrind, step, finerDirection) {
+  if (step === 0 || currentGrind === null || currentGrind === undefined) {
+    return null;
+  }
+  return currentGrind - step * finerDirection;
+}
+
 function requirePositiveNumber(value, name) {
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
     throw new RangeError(`${name} must be a number greater than zero`);

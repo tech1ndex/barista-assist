@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { computeMetrics, extractionPosition } from '../web/advice.js';
+import { computeMetrics, extractionPosition, nextGrindSetting } from '../web/advice.js';
 
 test('computeMetrics returns the brew ratio and flow rate', () => {
   const metrics = computeMetrics(18, 36, 28);
@@ -38,4 +38,28 @@ test('extractionPosition clamps the time nudge at plus or minus 0.3', () => {
 test('extractionPosition never leaves the gauge', () => {
   assert.ok(extractionPosition('bitter', 400) <= 0.95);
   assert.ok(extractionPosition('sour', 1) >= -0.95);
+});
+
+test('going finer moves toward the finer end of the dial', () => {
+  // Grinder where finer is a lower number.
+  assert.equal(nextGrindSetting(12, -1, -1), 11);
+  // Grinder where finer is a higher number.
+  assert.equal(nextGrindSetting(12, -1, 1), 13);
+});
+
+test('going coarser moves away from the finer end of the dial', () => {
+  assert.equal(nextGrindSetting(12, 1, -1), 13);
+  assert.equal(nextGrindSetting(12, 1, 1), 11);
+});
+
+test('no suggestion when the advice does not call for a grind change', () => {
+  assert.equal(nextGrindSetting(12, 0, -1), null);
+});
+
+test('no suggestion when the grinder setting was left blank', () => {
+  assert.equal(nextGrindSetting(null, -1, -1), null);
+});
+
+test('fractional grind settings are preserved', () => {
+  assert.equal(nextGrindSetting(12.5, -1, -1), 11.5);
 });
