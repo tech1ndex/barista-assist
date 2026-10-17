@@ -70,6 +70,35 @@ export function adviceForSour({ yieldGrams, timeSeconds, ratio }) {
   return { verdict: 'Under-extracted', lead, tips, step };
 }
 
+export function adviceForBitter({ yieldGrams, timeSeconds, ratio }) {
+  let lead;
+  let step;
+  const tips = [];
+
+  if (isFast(timeSeconds)) {
+    lead = 'Fast but bitter points to a ratio or temperature issue, or channeling.';
+    step = 0;
+    tips.push(`Stop the shot earlier (try ${Math.round(yieldGrams * 0.88)}g out).`);
+    tips.push('Try 1–2°C cooler and check puck prep.');
+  } else if (isSlow(timeSeconds)) {
+    lead = 'Go coarser by 1–2 steps.';
+    step = 1;
+    tips.push('A long shot pulls out the harsh compounds.');
+    tips.push('Aim for 25–32s at about 1:2.');
+  } else {
+    lead = 'Time is fine, so go coarser by 1 step or stop the shot sooner.';
+    step = 1;
+    tips.push(`Try a yield about 10% lower (e.g. ${Math.round(yieldGrams * 0.9)}g out).`);
+    tips.push('Or drop the temperature 1–2°C.');
+  }
+
+  if (ratio > 2.5) {
+    tips.push(`Your ratio of 1:${ratio.toFixed(1)} is long. A shorter ratio often removes bitterness.`);
+  }
+
+  return { verdict: 'Over-extracted', lead, tips, step };
+}
+
 function requirePositiveNumber(value, name) {
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
     throw new RangeError(`${name} must be a number greater than zero`);
