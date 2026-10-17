@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Barista Assist: espresso shot log with advice</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main>
+<h1>Barista Assist</h1>
+<p class="sub">Log a shot, say how it tasted, and get the next adjustment to try. Change one thing at a time.</p>
+
+<section class="card auth">
+<span id="who">Not signed in — shots are saved on this device only.</span>
+<button class="ghost" id="auth" type="button" hidden>Sign in with GitHub</button>
+</section>
+<p class="sync" id="syncstate"></p>
+
+<section class="card" aria-labelledby="logh">
+<h2 id="logh">Log a shot</h2>
+<div class="grid">
+<div><label for="dose">Dose (g)</label><input id="dose" type="number" step="0.1" inputmode="decimal" value="18"></div>
+<div><label for="yield">Yield (g)</label><input id="yield" type="number" step="0.1" inputmode="decimal" value="36"></div>
+<div><label for="time">Time (s)</label><input id="time" type="number" step="1" inputmode="numeric" value="28"></div>
+<div><label for="grind">Grind setting</label><input id="grind" type="number" step="0.5" inputmode="decimal" placeholder="optional"></div>
+</div>
+<div class="bean">
+<label for="bean">Bean</label>
+<input id="bean" list="beanlist" placeholder="optional" autocomplete="off">
+<datalist id="beanlist"></datalist>
+</div>
+<div class="taste" role="group" aria-label="How did it taste?">
+<button type="button" data-taste="sour" aria-pressed="false">Sour</button>
+<button type="button" data-taste="balanced" aria-pressed="true">Balanced</button>
+<button type="button" data-taste="bitter" aria-pressed="false">Bitter</button>
+<button type="button" data-taste="watery" aria-pressed="false">Watery</button>
+</div>
+<button class="primary" id="go" type="button">Save shot and get advice</button>
+<p id="formerror" class="row" role="alert" hidden></p>
+<div class="row"><label for="dir" style="margin:0">On my grinder, finer means</label>
+<select id="dir"><option value="-1">a lower number</option><option value="1">a higher number</option></select></div>
+</section>
+
+<section class="card" id="advice" aria-live="polite" hidden>
+<div class="meta"><span>Ratio <b id="mR"></b></span><span>Time <b id="mT"></b></span><span>Flow <b id="mF"></b></span></div>
+<div class="gauge"><div class="pin" id="pin"></div></div>
+<div class="ends"><span>Under-extracted</span><span>Over-extracted</span></div>
+<p class="verdict" id="vd"></p>
+<p class="lead" id="ld"></p>
+<ul class="tips" id="tp"></ul>
+</section>
+
+<section class="card">
+<h2>Shot history</h2>
+<p class="filter"><label for="beanfilter">Show</label>
+<select id="beanfilter"><option value="">All beans</option></select></p>
+<div id="hist"><p class="empty">No shots yet. Your first one will appear here.</p></div>
+</section>
+</main>
+<script type="module" src="app.js"></script>
+</body>
+</html>
