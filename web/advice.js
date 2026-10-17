@@ -1,3 +1,19 @@
+function requirePositiveNumber(value, name) {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+    throw new RangeError(`${name} must be a number greater than zero`);
+  }
+}
+
+export function computeMetrics(doseGrams, yieldGrams, timeSeconds) {
+  requirePositiveNumber(doseGrams, 'dose');
+  requirePositiveNumber(yieldGrams, 'yield');
+  requirePositiveNumber(timeSeconds, 'time');
+  return {
+    ratio: yieldGrams / doseGrams,
+    flow: yieldGrams / timeSeconds,
+  };
+}
+
 const REFERENCE_TIME_SECONDS = 28;
 
 const TASTE_BASE_POSITION = {
@@ -140,18 +156,35 @@ export function adviceForBalanced({ timeSeconds }) {
   };
 }
 
-function requirePositiveNumber(value, name) {
-  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
-    throw new RangeError(`${name} must be a number greater than zero`);
-  }
-}
+const ADVICE_BY_TASTE = {
+  sour: adviceForSour,
+  bitter: adviceForBitter,
+  watery: adviceForWatery,
+  balanced: adviceForBalanced,
+};
 
-export function computeMetrics(doseGrams, yieldGrams, timeSeconds) {
-  requirePositiveNumber(doseGrams, 'dose');
-  requirePositiveNumber(yieldGrams, 'yield');
-  requirePositiveNumber(timeSeconds, 'time');
-  return {
-    ratio: yieldGrams / doseGrams,
-    flow: yieldGrams / timeSeconds,
-  };
+// Keeps the gauge honest: whatever the time says, a shot the drinker
+// called sour must not render on the over-extracted side, and vice versa.
+const POSITION_BOUNDS_BY_TASTE = {
+  sour: { lowest: -0.95, highest: -0.2 },
+  bitter: { lowest: 0.2, highest: 0.95 },
+  watery: { lowest: -0.95, highest: 0.95 },
+  balanced: { lowest: -0.95, highest: 0.95 },
+};
+
+export const TASTES = Object.keys(ADVICE_BY_TASTE);
+
+export function analyse({ doseGrams, yieldGrams, timeSeconds, taste }) {
+  const adviceFor = ADVICE_BY_TASTE[taste];
+  if (!adviceFor) {
+    throw new TypeError(`Unknown taste: ${taste}`);
+  }
+
+  const { ratio, flow } = computeMetrics(doseGrams, yieldGrams, timeSeconds);
+  const advice = adviceFor({ doseGrams, yieldGrams, timeSeconds, ratio });
+
+  const bounds = POSITION_BOUNDS_BY_TASTE[taste];
+  const position = clamp(extractionPosition(taste, timeSeconds), bounds.lowest, bounds.highest);
+
+  return { ratio, flow, position, ...advice };
 }
