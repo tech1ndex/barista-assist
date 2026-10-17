@@ -1,0 +1,42 @@
+# These manifests belong in the GitOps repo, not this one. They live here as a
+# copy to move across. Replace REGISTRY/IMAGE:TAG before applying, and expose the
+# Service through the existing Cloudflare tunnel the same way as other services.
+#
+# Whatever public origin it lands on must be added to the Supabase redirect allow
+# list (Authentication -> URL Configuration), or sign-in will bounce.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: barista-assist
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: barista-assist
+  template:
+    metadata:
+      labels:
+        app: barista-assist
+    spec:
+      containers:
+        - name: web
+          image: REGISTRY/IMAGE:TAG
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: barista-assist
+spec:
+  selector:
+    app: barista-assist
+  ports:
+    - port: 80
+      targetPort: 80

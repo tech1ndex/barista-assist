@@ -49,8 +49,22 @@ test('deleting a shot tombstones it rather than removing it', () => {
   assert.equal(store.allShots()[0].dirty, true);
 });
 
+// Pins the storage key. Without this, the corrupt-data test below would pass
+// even if the key were wrong, because a missing key also yields an empty list.
+test('shots are read back from the documented storage key', () => {
+  const stored = [{
+    id: 'aaaaaaaa-0000-4000-8000-000000000001', user_id: null,
+    pulled_at: '2026-10-17T09:00:00Z', dose_g: 18, yield_g: 36, time_s: 28,
+    grind: null, bean: 'Jabali', taste: 'sour', deleted_at: null,
+    updated_at: '2026-10-17T09:00:00Z',
+  }];
+  const store = createStore(fakeStorage({ 'barista-assist-shots-v1': JSON.stringify(stored) }));
+  assert.equal(store.activeShots().length, 1);
+  assert.equal(store.activeShots()[0].bean, 'Jabali');
+});
+
 test('corrupt stored data resets to an empty list instead of throwing', () => {
-  const store = createStore(fakeStorage({ 'dialin-shots-v2': 'not json at all' }));
+  const store = createStore(fakeStorage({ 'barista-assist-shots-v1': 'not json at all' }));
   assert.deepEqual(store.activeShots(), []);
 });
 

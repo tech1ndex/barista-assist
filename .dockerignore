@@ -1,0 +1,6 @@
+test/
+docs/
+supabase/
+node_modules/
+.git/
+.superpowers/

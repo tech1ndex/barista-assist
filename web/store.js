@@ -1,5 +1,5 @@
-const SHOTS_KEY = 'dialin-shots-v2';
-const LAST_SYNC_KEY = 'dialin-last-sync-v2';
+const SHOTS_KEY = 'barista-assist-shots-v1';
+const LAST_SYNC_KEY = 'barista-assist-last-sync-v1';
 
 function newId() {
   if (globalThis.crypto?.randomUUID) {
