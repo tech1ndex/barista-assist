@@ -1,4 +1,6 @@
-# Barista Assist
+<pre>   ( (&#10;    ) )      ____             _     _             _            _     _   &#10; ........   | __ )  __ _ _ __(_)___| |_ __ _     / \   ___ ___(_)___| |_ &#10; |      |]  |  _ \ / _` | '__| / __| __/ _` |   / _ \ / __/ __| / __| __|&#10; \      /   | |_) | (_| | |  | \__ \ || (_| |  / ___ \\__ \__ \ \__ \ |_ &#10;  `----'    |____/ \__,_|_|  |_|___/\__\__,_| /_/   \_\___/___/_|___/\__| </pre>
+
+Try it out: https://barista-assist.app 🤎
 
 Log espresso shots, record how each tasted, get the next adjustment to try.
 Shots are stored locally and sync across devices when signed in.
@@ -13,6 +15,8 @@ on the network, and never fails because of it.
 
 The app works with no Supabase project configured: shots are saved in the
 browser only, and no sign-in control appears.
+
+Alternatively, you can skip to the [Deploying](#Deploying) section and just build and run locally with Docker.
 
 ## Tests
 
@@ -56,16 +60,7 @@ is committed empty and holds values only.
 Set both or neither. Setting only one exits 1 at startup rather than silently
 falling back to local-only, which looks like the credentials were ignored.
 
-**Locally without Docker**, fill in `web/credentials.js` and keep the change
-out of git:
-
-    git update-index --skip-worktree web/credentials.js
-
-What this does and does not buy you: the key stays out of git and out of the
-image, but it is still served to the browser and readable in devtools. That is
-inherent to a static client calling Supabase directly. Row-level security is
-what protects the data — every query is scoped by Postgres to the signed-in
-user.
+**Locally without Docker**, simply fill in `web/credentials.js` and build.
 
 ## Deploying
 
@@ -74,32 +69,3 @@ user.
 Supply `SUPABASE_URL` and `SUPABASE_ANON_KEY` to the container from whatever
 your platform uses for configuration — a Kubernetes Secret or ConfigMap fed
 into the Deployment's `env`, for instance.
-
-## Manual smoke checklist
-
-Not covered by unit tests, because mocking OAuth would test the mock rather
-than the auth. Run these once after enabling sync.
-
-- [ ] Sign in with GitHub; the control changes to "Sign out".
-- [ ] Log a shot; it appears in history.
-- [ ] Open the app on a second device, sign in, and confirm the shot appears.
-- [ ] Delete the shot on one device; confirm it disappears on the other and
-      does not come back.
-- [ ] Go offline, log a shot, confirm "1 shot not synced", go back online and
-      confirm the message clears.
-- [ ] Sign out; confirm shots logged while signed out stay local, then sign in
-      and confirm they upload without duplicating.
-- [ ] Type a bean name, save, and confirm it is offered as a suggestion next
-      time; confirm the history filter narrows to it.
-
-## Layout
-
-    web/        the app: static files, no build step
-      advice.js   pure advice rules, no DOM, no storage
-      store.js    local persistence, tombstones, outbox
-      sync.js     push/pull against Supabase
-      auth.js     GitHub sign-in
-      app.js      DOM wiring
-    supabase/   schema.sql
-    test/       unit tests, never shipped in the image
-    docs/       deployment manifests
