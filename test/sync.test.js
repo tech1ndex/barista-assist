@@ -244,3 +244,26 @@ test('the cursor holds when merged rows could not be written to storage', async 
   assert.equal(store.lastSyncAt(), '2026-10-17T08:00:00Z', 'cursor must not move');
   assert.ok(result.problems.some((p) => /could not be stored/.test(p)));
 });
+
+// --- the recorded advice must survive the round trip ------------------------
+
+test('advice is pushed to the server with the shot', async () => {
+  const store = createStore(fakeStorage());
+  const advice = { verdict: 'Under-extracted', lead: 'Go finer by 1–2 steps.', tips: ['a', 'b'] };
+  store.addShot({
+    dose_g: 18, yield_g: 36, time_s: 22, grind: 12, bean: null, taste: 'sour', advice,
+  });
+  const client = fakeClient();
+  await syncNow({ client, store, userId: 'user-1' });
+  assert.deepEqual(client.calls.upserted[0].advice, advice);
+});
+
+test('advice pulled from the server is kept', async () => {
+  const store = createStore(fakeStorage());
+  const advice = { verdict: 'Over-extracted', lead: 'Go coarser by 1–2 steps.', tips: ['x'] };
+  const client = fakeClient({
+    remoteRows: [remoteRow('aaaaaaaa-0000-4000-8000-0000000000ad', '2026-10-17T09:00:00Z', { advice })],
+  });
+  await syncNow({ client, store, userId: 'user-1' });
+  assert.deepEqual(store.activeShots()[0].advice, advice);
+});

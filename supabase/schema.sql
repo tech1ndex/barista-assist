@@ -14,6 +14,10 @@ create table if not exists shots (
   bean        text,
   taste       text not null
                 check (taste in ('sour','balanced','bitter','watery')),
+  advice      jsonb,                           -- {verdict, lead, tips} as it
+                                               -- was rendered at the time, so
+                                               -- tuning the rules later cannot
+                                               -- rewrite past recommendations
   deleted_at  timestamptz,                     -- tombstone, so a deletion can
                                                -- propagate to offline devices
   updated_at  timestamptz not null default now()
