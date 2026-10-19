@@ -20,9 +20,6 @@ function cleanBean(bean) {
   return trimmed === '' ? null : trimmed;
 }
 
-// Anything under our key that is not shot-shaped is someone else's data or a
-// previous format. Accepting it crashes the first render: activeShots() sorts
-// on pulled_at, and `undefined.localeCompare` kills the whole module.
 function isShot(value) {
   return value !== null
     && typeof value === 'object'
@@ -38,9 +35,7 @@ function memoryStorage() {
   };
 }
 
-// Reading the localStorage *property* throws SecurityError in Chrome with all
-// cookies blocked, and in some sandboxed iframes — before any getItem wrapper
-// could catch it. Probe it once here so the app degrades instead of dying.
+
 export function browserStorage(global = globalThis) {
   try {
     const storage = global.localStorage;
@@ -51,11 +46,7 @@ export function browserStorage(global = globalThis) {
   }
 }
 
-/**
- * Storage is scoped so two accounts on one browser cannot see, overwrite, or
- * upload each other's shots. Signed-out work lives under ANONYMOUS_SCOPE and
- * is adopted into the user's scope on sign-in.
- */
+
 export function createStore(storage, scope = ANONYMOUS_SCOPE) {
   const SHOTS_KEY = `${SHOTS_KEY_PREFIX}:${scope}`;
   const LAST_SYNC_KEY = `${LAST_SYNC_KEY_PREFIX}:${scope}`;
@@ -101,9 +92,6 @@ export function createStore(storage, scope = ANONYMOUS_SCOPE) {
     return shots.find((shot) => shot.id === id);
   }
 
-  // Every mutation bumps rev. A push clears the dirty flag only if rev is
-  // unchanged since the payload was captured, so a change made while the
-  // request was in flight is never mistaken for one the server received.
   function touch(shot) {
     shot.rev = (shot.rev ?? 1) + 1;
     shot.dirty = true;
@@ -134,10 +122,6 @@ export function createStore(storage, scope = ANONYMOUS_SCOPE) {
         grind: grind ?? null,
         bean: cleanBean(bean),
         taste,
-        // What the app actually told you at the time, stored verbatim so
-        // later changes to the rules cannot rewrite your history. Explicitly
-        // null rather than undefined: undefined vanishes through
-        // JSON.stringify and the column would be absent from the payload.
         advice: advice ?? null,
         deleted_at: null,
         updated_at: now,
@@ -172,10 +156,7 @@ export function createStore(storage, scope = ANONYMOUS_SCOPE) {
       return shots.filter((shot) => shot.dirty);
     },
 
-    /**
-     * @param pushed array of {id, rev} captured when the payload was built,
-     *   or bare ids for callers that have no in-flight window to worry about.
-     */
+
     markClean(pushed) {
       for (const entry of pushed) {
         const id = typeof entry === 'string' ? entry : entry.id;
@@ -209,8 +190,6 @@ export function createStore(storage, scope = ANONYMOUS_SCOPE) {
           shots.push({ ...incoming, rev: 1 });
         }
       }
-      // Callers need both: whether the write landed, and which rows were held
-      // back so the sync cursor does not advance past them.
       return { persisted: persist(), skipped };
     },
 
@@ -250,10 +229,6 @@ export function createStore(storage, scope = ANONYMOUS_SCOPE) {
   };
 }
 
-/**
- * Moves anything logged while signed out into the signed-in user's scope, once.
- * Returns the store the app should use from here.
- */
 export function adoptAnonymousShots(storage, userId) {
   const owned = createStore(storage, userId);
   const anonymous = createStore(storage, ANONYMOUS_SCOPE);
