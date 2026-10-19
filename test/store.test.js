@@ -317,7 +317,6 @@ test('remote rows carry their advice into the local store', () => {
   assert.deepEqual(store.activeShots()[0].advice, ADVICE);
 });
 
-// --- picking a bean rather than typing it -----------------------------------
 
 test('recentBeans puts the most recently pulled bean first', () => {
   const store = createStore(fakeStorage());

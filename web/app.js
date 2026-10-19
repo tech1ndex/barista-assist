@@ -206,8 +206,6 @@ function renderBeanChips() {
   const chips = store.recentBeans(4).map((bean) => beanChip(
     bean,
     !enteringNewBean && bean.toLowerCase() === chosen,
-    // Tapping the bean you already have selected clears it, because a shot
-    // with no bean is a legitimate thing to log.
     () => chooseBean(bean.toLowerCase() === chosen && !enteringNewBean ? '' : bean),
   ));
 
