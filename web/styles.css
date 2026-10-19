@@ -66,3 +66,7 @@ input:focus-visible,button:focus-visible,select:focus-visible{outline:2px solid 
 .past{border-top:1px dashed var(--line);padding:10px 0 12px 14px}
 .past-verdict{font-weight:800;margin:0 0 4px}
 .past-note{color:var(--mute);font-size:.8rem;margin:8px 0 0}
+.beanhead{display:block;font-size:.85rem;color:var(--mute);margin-bottom:6px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.beanchip{font:inherit;font-size:.9rem;padding:7px 12px;border-radius:99px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.beanchip[aria-pressed="true"]{border-color:var(--acc);background:var(--acc);color:var(--accInk);font-weight:600}

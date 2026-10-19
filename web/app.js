@@ -15,6 +15,7 @@ let selectedTaste = 'balanced';
 let beanFilter = '';
 let lastProblem = '';
 let expandedShotId = null;
+let enteringNewBean = false;
 
 function readForm() {
   const grindValue = element('grind').value.trim();
@@ -173,8 +174,52 @@ function renderHistory() {
   }));
 }
 
+function chosenBean() {
+  return element('bean').value.trim();
+}
+
+function chooseBean(bean) {
+  element('bean').value = bean;
+  enteringNewBean = false;
+  renderBeanControls();
+}
+
+function startNewBean() {
+  element('bean').value = '';
+  enteringNewBean = true;
+  renderBeanControls();
+  element('bean').focus();
+}
+
+function beanChip(label, pressed, onClick) {
+  const chip = document.createElement('button');
+  chip.type = 'button';
+  chip.className = 'beanchip';
+  chip.textContent = label;
+  chip.setAttribute('aria-pressed', String(pressed));
+  chip.addEventListener('click', onClick);
+  return chip;
+}
+
+function renderBeanChips() {
+  const chosen = chosenBean().toLowerCase();
+  const chips = store.recentBeans(4).map((bean) => beanChip(
+    bean,
+    !enteringNewBean && bean.toLowerCase() === chosen,
+    // Tapping the bean you already have selected clears it, because a shot
+    // with no bean is a legitimate thing to log.
+    () => chooseBean(bean.toLowerCase() === chosen && !enteringNewBean ? '' : bean),
+  ));
+
+  chips.push(beanChip('+ New', enteringNewBean, startNewBean));
+  element('beanchips').replaceChildren(...chips);
+  element('beannew').hidden = !enteringNewBean;
+}
+
 function renderBeanControls() {
   const beans = store.distinctBeans();
+
+  renderBeanChips();
 
   element('beanlist').replaceChildren(...beans.map((bean) => {
     const option = document.createElement('option');
@@ -281,6 +326,8 @@ function saveShot() {
     taste: form.taste,
     advice: { verdict: result.verdict, lead: result.lead, tips },
   });
+
+  enteringNewBean = false;
 
   renderAdvice({ ...result, timeSeconds: form.timeSeconds }, tips);
   renderAll();

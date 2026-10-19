@@ -152,6 +152,24 @@ export function createStore(storage, scope = ANONYMOUS_SCOPE) {
       return [...seen.values()].sort((left, right) => left.localeCompare(right));
     },
 
+    /**
+     * Beans ordered by when you last pulled one, newest first.
+     *
+     * Separate from distinctBeans, which stays alphabetical: that one feeds
+     * the history filter, where you are scanning for a name. This one feeds
+     * the picker, where the two or three bags currently open should be the
+     * ones under your thumb.
+     */
+    recentBeans(limit = 4) {
+      const mostRecent = new Map();
+      for (const shot of this.activeShots()) { // already newest first
+        if (!shot.bean) continue;
+        const key = shot.bean.toLowerCase();
+        if (!mostRecent.has(key)) mostRecent.set(key, shot.bean);
+      }
+      return [...mostRecent.values()].slice(0, limit);
+    },
+
     dirtyShots() {
       return shots.filter((shot) => shot.dirty);
     },

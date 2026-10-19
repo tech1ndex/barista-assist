@@ -316,3 +316,48 @@ test('remote rows carry their advice into the local store', () => {
   }]);
   assert.deepEqual(store.activeShots()[0].advice, ADVICE);
 });
+
+// --- picking a bean rather than typing it -----------------------------------
+
+test('recentBeans puts the most recently pulled bean first', () => {
+  const store = createStore(fakeStorage());
+  // pulled_at is assigned on save, so insertion order is chronological.
+  store.addShot(newShot({ bean: 'Jabali' }));
+  store.addShot(newShot({ bean: 'Red Brick' }));
+  store.addShot(newShot({ bean: 'Wild Peach' }));
+  assert.deepEqual(store.recentBeans(), ['Wild Peach', 'Red Brick', 'Jabali']);
+});
+
+test('pulling an old bean again moves it back to the front', () => {
+  const store = createStore(fakeStorage());
+  store.addShot(newShot({ bean: 'Jabali' }));
+  store.addShot(newShot({ bean: 'Red Brick' }));
+  store.addShot(newShot({ bean: 'Jabali' }));
+  assert.deepEqual(store.recentBeans(), ['Jabali', 'Red Brick']);
+});
+
+test('recentBeans is limited so the chips do not wrap', () => {
+  const store = createStore(fakeStorage());
+  for (const bean of ['A', 'B', 'C', 'D', 'E', 'F']) store.addShot(newShot({ bean }));
+  assert.deepEqual(store.recentBeans(4), ['F', 'E', 'D', 'C']);
+});
+
+test('recentBeans skips blanks and deleted shots', () => {
+  const store = createStore(fakeStorage());
+  store.addShot(newShot({ bean: 'Keep' }));
+  store.addShot(newShot({ bean: null }));
+  const gone = store.addShot(newShot({ bean: 'Deleted' }));
+  store.deleteShot(gone.id);
+  assert.deepEqual(store.recentBeans(), ['Keep']);
+});
+
+test('recentBeans folds case, keeping the spelling most recently used', () => {
+  const store = createStore(fakeStorage());
+  store.addShot(newShot({ bean: 'Wild Peach' }));
+  store.addShot(newShot({ bean: 'wild peach' }));
+  assert.deepEqual(store.recentBeans(), ['wild peach']);
+});
+
+test('recentBeans is empty before any shot is logged', () => {
+  assert.deepEqual(createStore(fakeStorage()).recentBeans(), []);
+});
