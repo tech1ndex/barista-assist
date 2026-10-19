@@ -1,6 +1,6 @@
 import { analyse, nextGrindSetting } from './advice.js';
 import { createStore, browserStorage, adoptAnonymousShots, ANONYMOUS_SCOPE } from './store.js';
-import { createClient, signIn, signOut, currentUser, onAuthChange } from './auth.js';
+import { createClient, signIn, signOut, currentUser, onAuthChange, displayName } from './auth.js';
 import { syncNow } from './sync.js';
 
 const storage = browserStorage();
@@ -158,7 +158,7 @@ function renderAuth() {
 
   button.textContent = signedInUser ? 'Sign out' : 'Sign in with GitHub';
   element('who').textContent = signedInUser
-    ? 'Signed in — shots sync across your devices.'
+    ? `Signed in as ${displayName(signedInUser)} — shots sync across your devices.`
     : 'Not signed in — shots are saved on this device only.';
 }
 

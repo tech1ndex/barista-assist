@@ -39,6 +39,11 @@ export async function currentUser(client) {
   return data.user ?? null;
 }
 
+export function displayName(user) {
+  const meta = user?.user_metadata ?? {};
+  return meta.user_name || meta.preferred_username || meta.name || user?.email || 'unknown user';
+}
+
 export function onAuthChange(client, callback) {
   client.auth.onAuthStateChange((_event, session) => callback(session?.user ?? null));
 }

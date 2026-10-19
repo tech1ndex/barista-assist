@@ -19,6 +19,14 @@ test('createClient returns null when no project is configured', async () => {
   assert.equal(await createClient(), null);
 });
 
+test('displayName prefers the GitHub username and falls back sensibly', async () => {
+  const { displayName } = await import('../web/auth.js');
+  assert.equal(displayName({ user_metadata: { user_name: 'octocat', name: 'Mona' }, email: 'a@b.c' }), 'octocat');
+  assert.equal(displayName({ user_metadata: { name: 'Mona' }, email: 'a@b.c' }), 'Mona');
+  assert.equal(displayName({ email: 'a@b.c' }), 'a@b.c');
+  assert.equal(displayName({}), 'unknown user');
+});
+
 test('createClient never throws, even when the module cannot be fetched', async () => {
   const { createClient } = await import('../web/auth.js');
   await assert.doesNotReject(() => createClient());
