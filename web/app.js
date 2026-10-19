@@ -6,8 +6,6 @@ import { syncNow } from './sync.js';
 const storage = browserStorage();
 const element = (id) => document.getElementById(id);
 
-// Rebound on sign-in and sign-out: each account gets its own scope, so two
-// people sharing a browser cannot read or upload each other's shots.
 let store = createStore(storage, ANONYMOUS_SCOPE);
 let client = null;
 let signedInUser = null;
@@ -36,12 +34,6 @@ function showFormError(message) {
   error.hidden = message === '';
 }
 
-/**
- * The tips exactly as the user reads them, including the grind suggestion.
- * That line depends on the grinder-direction dropdown, which is not stored
- * anywhere — so it has to be captured here rather than recomputed later,
- * when the dropdown may say something different.
- */
 function tipsFor(result, grind) {
   const finerDirection = Number(element('dir').value);
   const suggestion = nextGrindSetting(grind, result.step, finerDirection);
@@ -53,7 +45,7 @@ function tipsFor(result, grind) {
 function renderTips(list, tips) {
   list.replaceChildren(...tips.map((text) => {
     const item = document.createElement('li');
-    item.textContent = text; // textContent, so no escaping is needed
+    item.textContent = text;
     return item;
   }));
 }
@@ -69,11 +61,7 @@ function renderAdvice(result, tips) {
   element('advice').hidden = false;
 }
 
-/**
- * Shots logged before advice was recorded still have useful numbers, so the
- * advice is regenerated for them. Marked as such, because once the thresholds
- * are tuned this will no longer be what the app said at the time.
- */
+
 function recallAdvice(shot) {
   if (shot.advice) return { ...shot.advice, recomputed: false };
   try {
@@ -97,9 +85,6 @@ function describeShot(shot) {
 }
 
 function matchesFilter(shot) {
-  // Case-folded, because distinctBeans folds too: an exact comparison would
-  // hide "red brick" from the "Red Brick" filter, losing it from its own
-  // coffee's history with no sign it exists.
   if (beanFilter === '') return true;
   return (shot.bean ?? '').toLowerCase() === beanFilter.toLowerCase();
 }
@@ -158,9 +143,6 @@ function renderHistory() {
     row.className = 'shot';
 
     const open = shot.id === expandedShotId;
-
-    // A button, not a div with a click handler: it has to be reachable by
-    // keyboard and announce its expanded state to a screen reader.
     const summary = document.createElement('button');
     summary.className = 'shot-summary';
     summary.type = 'button';
@@ -183,8 +165,6 @@ function renderHistory() {
       store.deleteShot(shot.id);
       if (expandedShotId === shot.id) expandedShotId = null;
       renderAll();
-      // A tombstone is a local change like any other and has to reach the
-      // other devices, or the shot stays visible on them indefinitely.
       runSync();
     });
 
@@ -230,8 +210,6 @@ function renderSyncState(result) {
 
 function renderAuth() {
   const button = element('auth');
-  // With no client the app is local-only by design, so there is nothing to
-  // sign into and the control stays hidden.
   button.hidden = client === null;
   if (client === null) return;
 
@@ -249,8 +227,6 @@ function renderAll() {
 }
 
 async function runSync() {
-  // Without this, a save and the online handler can start overlapping syncs
-  // that push the same rows twice and race on the cursor.
   if (!client || !signedInUser || syncInFlight) return;
   syncInFlight = true;
   try {
@@ -294,8 +270,6 @@ function saveShot() {
   }
   showFormError('');
 
-  // Captured once and used for both the panel and the stored record, so
-  // what you read now is byte-for-byte what you will read back tomorrow.
   const tips = tipsFor(result, form.grind);
 
   store.addShot({
