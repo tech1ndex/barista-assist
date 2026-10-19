@@ -152,6 +152,16 @@ export function createStore(storage, scope = ANONYMOUS_SCOPE) {
       return [...seen.values()].sort((left, right) => left.localeCompare(right));
     },
 
+    recentBeans(limit = 4) {
+      const mostRecent = new Map();
+      for (const shot of this.activeShots()) { // already newest first
+        if (!shot.bean) continue;
+        const key = shot.bean.toLowerCase();
+        if (!mostRecent.has(key)) mostRecent.set(key, shot.bean);
+      }
+      return [...mostRecent.values()].slice(0, limit);
+    },
+
     dirtyShots() {
       return shots.filter((shot) => shot.dirty);
     },
