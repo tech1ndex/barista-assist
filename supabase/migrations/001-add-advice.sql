@@ -1,0 +1,11 @@
+-- Run once against a project that already has schema.sql applied.
+-- Fresh projects get this from schema.sql directly and can skip it.
+--
+-- Holds {verdict, lead, tips} exactly as the app rendered it when the shot was
+-- logged. Deliberately a verbatim record rather than something recomputed: the
+-- advice thresholds are expected to be tuned per machine, and tuning them must
+-- not rewrite what you were told at the time.
+--
+-- jsonb rather than separate columns because it is opaque — never filtered,
+-- never sorted, never joined on.
+alter table shots add column if not exists advice jsonb;

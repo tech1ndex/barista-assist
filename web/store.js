@@ -122,7 +122,7 @@ export function createStore(storage, scope = ANONYMOUS_SCOPE) {
         .sort((left, right) => (left.pulled_at < right.pulled_at ? 1 : -1));
     },
 
-    addShot({ dose_g, yield_g, time_s, grind, bean, taste }) {
+    addShot({ dose_g, yield_g, time_s, grind, bean, taste, advice }) {
       const now = new Date().toISOString();
       const shot = {
         id: newId(),
@@ -134,6 +134,11 @@ export function createStore(storage, scope = ANONYMOUS_SCOPE) {
         grind: grind ?? null,
         bean: cleanBean(bean),
         taste,
+        // What the app actually told you at the time, stored verbatim so
+        // later changes to the rules cannot rewrite your history. Explicitly
+        // null rather than undefined: undefined vanishes through
+        // JSON.stringify and the column would be absent from the payload.
+        advice: advice ?? null,
         deleted_at: null,
         updated_at: now,
         rev: 1,

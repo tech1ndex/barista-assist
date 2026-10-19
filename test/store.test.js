@@ -270,3 +270,49 @@ test('adopting twice does not duplicate', () => {
   const again = adoptAnonymousShots(storage, 'alice');
   assert.equal(again.activeShots().length, 1);
 });
+
+// --- remembering the advice that was given ----------------------------------
+
+const ADVICE = {
+  verdict: 'Under-extracted',
+  lead: 'Go finer by 1–2 steps.',
+  tips: ['Next grind setting to try: 11 (from 12).', 'A fast shot gives the water too little contact time.'],
+};
+
+test('a shot remembers the advice it was given', () => {
+  const store = createStore(fakeStorage());
+  const shot = store.addShot({ ...newShot(), advice: ADVICE });
+  assert.deepEqual(shot.advice, ADVICE);
+});
+
+test('stored advice survives a reload', () => {
+  const storage = fakeStorage();
+  createStore(storage).addShot({ ...newShot(), advice: ADVICE });
+  assert.deepEqual(createStore(storage).activeShots()[0].advice, ADVICE);
+});
+
+test('a shot saved without advice records null rather than undefined', () => {
+  // undefined disappears through JSON.stringify, so the column would be absent
+  // from the payload rather than explicitly empty.
+  const store = createStore(fakeStorage());
+  assert.equal(store.addShot(newShot()).advice, null);
+});
+
+test('advice is never rewritten once recorded', () => {
+  // The whole point is that it is what you were told at the time.
+  const store = createStore(fakeStorage());
+  const shot = store.addShot({ ...newShot(), advice: ADVICE });
+  store.deleteShot(shot.id);
+  assert.deepEqual(store.allShots()[0].advice, ADVICE);
+});
+
+test('remote rows carry their advice into the local store', () => {
+  const store = createStore(fakeStorage());
+  store.mergeRemote([{
+    id: 'aaaaaaaa-0000-4000-8000-0000000000ad', user_id: 'user-1',
+    pulled_at: '2026-10-17T09:00:00Z', dose_g: 18, yield_g: 36, time_s: 22,
+    grind: 12, bean: null, taste: 'sour', deleted_at: null,
+    updated_at: '2026-10-17T09:00:00Z', advice: ADVICE,
+  }]);
+  assert.deepEqual(store.activeShots()[0].advice, ADVICE);
+});
