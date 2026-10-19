@@ -304,6 +304,14 @@ function useScopeFor(user) {
 function saveShot() {
   const form = readForm();
 
+  // Grind is not part of the brew maths in advice.js — it only feeds the
+  // grind-direction suggestion — so it is validated here rather than folded
+  // into analyse(), which stays about dose, yield, time and taste only.
+  if (form.grind === null) {
+    showFormError('Enter a grind setting.');
+    return;
+  }
+
   let result;
   try {
     result = analyse(form);
