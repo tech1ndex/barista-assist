@@ -60,6 +60,45 @@ test('no suggestion when the grinder setting was left blank', () => {
   assert.equal(nextGrindSetting(null, -1, -1), null);
 });
 
-test('fractional grind settings are preserved', () => {
-  assert.equal(nextGrindSetting(12.5, -1, -1), 11.5);
+test('a decimal dial goes one tenth coarser, as in the reported 1.3 setting', () => {
+  assert.equal(nextGrindSetting(1.3, 1, -1), 1.4);
+});
+
+test('decimal grind adjustments respect both dial directions', () => {
+  assert.equal(nextGrindSetting(1.3, -1, -1), 1.2);
+  assert.equal(nextGrindSetting(1.3, 1, 1), 1.2);
+  assert.equal(nextGrindSetting(1.3, -1, 1), 1.4);
+});
+
+test('automatic grind steps follow the setting precision', () => {
+  assert.equal(nextGrindSetting(12.5, -1, -1), 12.4);
+  assert.equal(nextGrindSetting(1.25, 1, -1), 1.26);
+});
+
+test('explicit steps support whole-number and half-step grinders', () => {
+  assert.equal(nextGrindSetting(12.5, -1, -1, 1), 11.5);
+  assert.equal(nextGrindSetting(12.5, 1, -1, 0.5), 13);
+});
+
+test('explicit decimal steps keep working across whole numbers', () => {
+  assert.equal(nextGrindSetting(1.9, 1, -1, 0.1), 2);
+  assert.equal(nextGrindSetting(2, 1, -1, 0.1), 2.1);
+  assert.equal(nextGrindSetting(2, -1, -1, 0.1), 1.9);
+});
+
+test('decimal suggestions do not expose floating-point rounding errors', () => {
+  assert.equal(nextGrindSetting(1.2, 1, -1), 1.3);
+  assert.equal(nextGrindSetting(1.1, -1, -1), 1);
+  assert.equal(nextGrindSetting(1.14, 1, -1, 0.01), 1.15);
+});
+
+test('explicit steps still give no suggestion when no adjustment is needed', () => {
+  assert.equal(nextGrindSetting(1.3, 0, -1, 0.1), null);
+  assert.equal(nextGrindSetting(undefined, -1, -1, 0.1), null);
+});
+
+test('grind step sizes must be positive finite numbers', () => {
+  for (const stepSize of [0, -0.1, NaN, Infinity, '0.1']) {
+    assert.throws(() => nextGrindSetting(1.3, 1, -1, stepSize), RangeError);
+  }
 });

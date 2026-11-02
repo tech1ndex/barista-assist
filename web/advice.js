@@ -33,16 +33,28 @@ export function extractionPosition(taste, timeSeconds) {
   return clamp(base + timeNudge, -0.95, 0.95);
 }
 
+function decimalPlaces(value) {
+  const [digits, exponent = '0'] = String(value).split('e');
+  const fraction = digits.split('.')[1] ?? '';
+  return Math.max(0, fraction.length - Number(exponent));
+}
+
 /**
  * step: -1 finer, 1 coarser, 0 no change.
- * finerDirection: the change in dial number that makes the grind finer.
- * Going finer therefore adds finerDirection; going coarser subtracts it.
+ * finerDirection: -1 if lower numbers are finer, 1 if higher numbers are finer.
+ * stepSize: dial increment; defaults to the current setting's decimal precision.
+ * Set it explicitly for grinders with different increments or at whole numbers
+ * on a decimal dial (e.g. 2.0 with a 0.1 increment).
  */
-export function nextGrindSetting(currentGrind, step, finerDirection) {
+export function nextGrindSetting(currentGrind, step, finerDirection, stepSize = null) {
   if (step === 0 || currentGrind === null || currentGrind === undefined) {
     return null;
   }
-  return currentGrind - step * finerDirection;
+  const increment = stepSize ?? 10 ** -decimalPlaces(currentGrind);
+  requirePositiveNumber(increment, 'grind step size');
+  const suggestion = currentGrind - step * finerDirection * increment;
+  const precision = Math.max(decimalPlaces(currentGrind), decimalPlaces(increment));
+  return Number(suggestion.toFixed(Math.min(precision, 100)));
 }
 
 const FAST_BELOW_SECONDS = 25;
