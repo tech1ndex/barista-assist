@@ -29,7 +29,7 @@
 <div><label for="dose">Dose (g)</label><input id="dose" type="number" step="0.1" inputmode="decimal" value="18"></div>
 <div><label for="yield">Yield (g)</label><input id="yield" type="number" step="0.1" inputmode="decimal" value="36"></div>
 <div><label for="time">Time (s)</label><input id="time" type="number" step="1" inputmode="numeric" value="28"></div>
-<div><label for="grind">Grind setting</label><input id="grind" type="number" step="0.5" inputmode="decimal" placeholder="e.g. 12" required></div>
+<div><label for="grind">Grind setting</label><input id="grind" type="number" step="any" inputmode="decimal" placeholder="e.g. 12 or 1.3" required></div>
 </div>
 <div class="bean">
 <span class="beanhead" id="beanhead">Bean</span>
@@ -50,6 +50,8 @@
 <p id="formerror" class="row" role="alert" hidden></p>
 <div class="row"><label for="dir" style="margin:0">On my grinder, finer means</label>
 <select id="dir"><option value="-1">a lower number</option><option value="1">a higher number</option></select></div>
+<div class="row"><label for="grindstep" style="margin:0">One grind step</label>
+<select id="grindstep"><option value="auto">Auto (from setting)</option><option value="1">1</option><option value="0.5">0.5</option><option value="0.1">0.1</option><option value="0.01">0.01</option></select></div>
 </section>
 
 <section class="card" id="advice" aria-live="polite" hidden>

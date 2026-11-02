@@ -37,7 +37,10 @@ function showFormError(message) {
 
 function tipsFor(result, grind) {
   const finerDirection = Number(element('dir').value);
-  const suggestion = nextGrindSetting(grind, result.step, finerDirection);
+  const stepSize = element('grindstep').value;
+  const suggestion = nextGrindSetting(
+    grind, result.step, finerDirection, stepSize === 'auto' ? null : Number(stepSize),
+  );
   return suggestion === null
     ? result.tips
     : [`Next grind setting to try: ${suggestion} (from ${grind}).`, ...result.tips];

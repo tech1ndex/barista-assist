@@ -5,6 +5,12 @@ Try it out: https://barista-assist.app 🤎
 Log espresso shots, record how each tasted, get the next adjustment to try.
 Shots are stored locally and sync across devices when signed in.
 
+Grind advice automatically matches the setting's decimal places: one step
+coarser is 1.3 → 1.4 on a dial where lower numbers are finer, or 12 → 13
+on a whole-number dial. Use **One grind step** to choose your grinder's
+increment explicitly, including at whole numbers on a decimal dial
+(e.g. choose 0.1 for 2.0 → 2.1).
+
 The app is local-first: `localStorage` is what the interface reads and writes,
 and Supabase is a replica synced in the background. Logging a shot never waits
 on the network, and never fails because of it.
